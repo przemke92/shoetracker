@@ -4,96 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shoe Tracker</title>
-<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Shoe Tracker">
 <style>
-       * {
-           box-sizing: border-box;
-           font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-       }
-       body {
-           margin: 0;
-           background: #000;
-           color: #fff;
-           padding: 20px;
-       }
-       h1 {
-           text-align: center;
-           color: #39ff14;
-           letter-spacing: 1px;
-           margin-bottom: 24px;
-       }
-       .card {
-           background: #141414;
-           border-radius: 18px;
-           padding: 18px;
-           margin-bottom: 18px;
-       }
-       label {
-           display: block;
-           margin-top: 12px;
-           font-size: 16px;
-           opacity: 0.9;
-       }
-       input, select {
-           width: 100%;
-           max-width: 100%;
-           margin-top: 8px;
-           padding: 14px;
-           border-radius: 12px;
-           border: none;
-           background: #1f1f1f;
-           color: #fff;
-           font-size: 16px;
-       }
-       button {
-           width: 100%;
-           margin-top: 16px;
-           padding: 16px;
-           border-radius: 14px;
-           border: none;
-           background: #39ff14;
-           color: #000;
-           font-size: 18px;
-           font-weight: 600;
-       }
-       .outline-btn {
-           background: transparent;
-           border: 2px solid #39ff14;
-           color: #39ff14;
-           padding: 14px;
-           font-size: 17px;
-           border-radius: 14px;
-           margin-bottom: 16px;
-       }
-       .hidden {
-           display: none;
-       }
-       .shoe-stat {
-           margin-top: 14px;
-       }
-       .shoe-name {
-           color: #39ff14;
-           font-weight: 600;
-           margin-bottom: 4px;
-       }
-       .settings-btn {
-           background: transparent;
-           border: 2px solid #39ff14;
-           color: #39ff14;
-           padding: 14px;
-           font-size: 17px;
-           border-radius: 14px;
-           margin-top: 16px;
-       }
-       .danger {
-           background: #2a0000;
-           color: #ff5c5c;
-           border: 1px solid #ff5c5c;
-       }
+   * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+   body { margin:0; background:#000; color:#fff; padding:20px; }
+   h1 { text-align:center; color:#39ff14; letter-spacing:1px; margin-bottom:24px; }
+   .card { background:#141414; border-radius:18px; padding:18px; margin-bottom:18px; }
+   label { display:block; margin-top:12px; font-size:16px; opacity:0.9; }
+   input, select { width:100%; max-width:100%; margin-top:8px; padding:14px; border-radius:12px; border:none; background:#1f1f1f; color:#fff; font-size:16px; }
+   button { width:100%; margin-top:16px; padding:16px; border-radius:14px; border:none; background:#39ff14; color:#000; font-size:18px; font-weight:600; }
+   .outline-btn { background:transparent; border:2px solid #39ff14; color:#39ff14; padding:14px; font-size:17px; border-radius:14px; margin-bottom:16px; }
+   .hidden { display:none; }
+   .shoe-stat { margin-top:14px; }
+   .shoe-name { color:#39ff14; font-weight:600; margin-bottom:4px; }
+   .settings-btn { background:transparent; border:2px solid #39ff14; color:#39ff14; padding:14px; font-size:17px; border-radius:14px; margin-top:16px; }
+   .danger { background:#2a0000; color:#ff5c5c; border:1px solid #ff5c5c; }
+   .run-item { background:#1f1f1f; padding:12px; margin:6px 0; border-radius:12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+   .run-info { flex:1; }
+   .run-buttons button { margin-left:6px; padding:6px 10px; font-size:14px; }
+   .distance-tiles { display:flex; gap:8px; margin-top:8px; }
+   .distance-tiles button { flex:1; padding:10px; font-size:16px; border-radius:12px; background:#1f1f1f; color:#fff; border:none; }
+   .distance-tiles button:hover { background:#39ff14; color:#000; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -106,6 +40,12 @@
 </div>
 <div class="card">
 <label>Dystans (km)</label>
+<div class="distance-tiles">
+<button onclick="setDistance(5)">5</button>
+<button onclick="setDistance(10)">10</button>
+<button onclick="setDistance(15)">15</button>
+<button onclick="setDistance(20)">20</button>
+</div>
 <input id="distance" type="number" step="0.01">
 <label>Czas (mm:ss)</label>
 <input id="time" placeholder="np. 45:30">
@@ -116,100 +56,100 @@
 <div class="card">
 <h2>Statystyki butów</h2>
 <div id="stats"></div>
+<h3>Lista biegów</h3>
+<div id="runList"></div>
 </div>
 <button class="settings-btn" onclick="toggleSettings()">⚙️ Ustawienia</button>
 <div id="settings" class="card hidden">
 <button class="danger" onclick="resetRuns()">Wyczyść wszystkie biegi</button>
 </div>
 <script>
-   let shoes = JSON.parse(localStorage.getItem("shoes")) || [];
-   let runs = JSON.parse(localStorage.getItem("runs")) || [];
-   function save() {
-       localStorage.setItem("shoes", JSON.stringify(shoes));
-       localStorage.setItem("runs", JSON.stringify(runs));
-   }
-   function toggleShoeForm() {
-       document.getElementById("shoeForm").classList.toggle("hidden");
-   }
-   function toggleSettings() {
-       document.getElementById("settings").classList.toggle("hidden");
-   }
-   function addShoe() {
-       const name = document.getElementById("newShoeName").value.trim();
-       if (!name) return;
-       shoes.push(name);
-       document.getElementById("newShoeName").value = "";
-       save();
-       updateUI();
-   }
-   function parseTime(str) {
-       const parts = str.split(":").map(Number);
-       if (parts.length !== 2 || parts.some(isNaN)) return null;
-       return parts[0] * 60 + parts[1];
-   }
-   function formatTime(sec) {
-       let s = Math.floor(sec);
-       let min = Math.floor(s / 60);
-       let hrs = Math.floor(min / 60);
-       let days = Math.floor(hrs / 24);
-       let months = Math.floor(days / 30);
-       s %= 60;
-       min %= 60;
-       hrs %= 24;
-       days %= 30;
-       return `${months}m ${days}d ${hrs}h ${min}m ${s}s`;
-   }
-   function formatPace(secPerKm) {
-       const min = Math.floor(secPerKm / 60);
-       const sec = Math.round(secPerKm - min * 60);
-       return `${min}:${sec.toString().padStart(2,'0')} min/km`;
-   }
-   function addRun() {
-       const distance = parseFloat(document.getElementById("distance").value);
-       const timeStr = document.getElementById("time").value;
-       const shoe = document.getElementById("shoeSelect").value;
-       const seconds = parseTime(timeStr);
-       if (!distance || !seconds || !shoe) return;
-       runs.push({ distance, seconds, shoe });
-       save();
-       updateUI();
-       document.getElementById("distance").value = "";
-       document.getElementById("time").value = "";
-   }
-   function resetRuns() {
-       if (!confirm("Na pewno usunąć wszystkie biegi?")) return;
-       runs = [];
-       save();
-       updateUI();
-   }
-   function updateUI() {
-       const select = document.getElementById("shoeSelect");
-       select.innerHTML = "";
-       shoes.forEach(s => {
-           const opt = document.createElement("option");
-           opt.textContent = s;
-           select.appendChild(opt);
-       });
-       const stats = document.getElementById("stats");
-       stats.innerHTML = "";
-       shoes.forEach(shoe => {
-           const shoeRuns = runs.filter(r => r.shoe === shoe);
-           if (!shoeRuns.length) return;
-           const totalDist = shoeRuns.reduce((a, r) => a + r.distance, 0);
-           const totalTime = shoeRuns.reduce((a, r) => a + r.seconds, 0);
-           const avgPace = totalTime / totalDist; // sekundy/km
-           const div = document.createElement("div");
-           div.className = "shoe-stat";
-           div.innerHTML = `
-<div class="shoe-name">${shoe}</div>
-               Dystans: ${totalDist.toFixed(1)} km<br>
-               Czas wybiegany: ${formatTime(totalTime)}<br>
-               Średnie tempo: ${formatPace(avgPace)}
-           `;
-           stats.appendChild(div);
-       });
-   }
-   updateUI();
+let shoes = JSON.parse(localStorage.getItem("shoes")) || ["Nike Vomero Plus"];
+let runs = JSON.parse(localStorage.getItem("runs")) || [];
+function save() { localStorage.setItem("shoes", JSON.stringify(shoes)); localStorage.setItem("runs", JSON.stringify(runs)); }
+function toggleShoeForm() { document.getElementById("shoeForm").classList.toggle("hidden"); }
+function toggleSettings() { document.getElementById("settings").classList.toggle("hidden"); }
+function setDistance(val) { document.getElementById("distance").value = val; }
+function addShoe() {
+   const name = document.getElementById("newShoeName").value.trim();
+   if(!name) return;
+   shoes.push(name);
+   document.getElementById("newShoeName").value = "";
+   save(); updateUI();
+}
+function parseTime(str) {
+   const parts = str.split(":").map(Number);
+   if(parts.length!==2 || parts.some(isNaN)) return null;
+   return parts[0]*60 + parts[1];
+}
+function formatTime(sec) {
+   let s=Math.floor(sec), min=Math.floor(s/60), hrs=Math.floor(min/60), days=Math.floor(hrs/24), months=Math.floor(days/30);
+   s%=60; min%=60; hrs%=24; days%=30;
+   return `${months}m ${days}d ${hrs}h ${min}m ${s}s`;
+}
+function formatPace(secPerKm) {
+   const min=Math.floor(secPerKm/60);
+   const sec=Math.round(secPerKm - min*60);
+   return `${min}:${sec.toString().padStart(2,'0')} min/km`;
+}
+function addRun(editIndex=null) {
+   const distance=parseFloat(document.getElementById("distance").value);
+   const timeStr=document.getElementById("time").value;
+   const shoe=document.getElementById("shoeSelect").value;
+   const seconds=parseTime(timeStr);
+   if(!distance || !seconds || !shoe) return;
+   if(editIndex!==null) runs[editIndex]={distance, seconds, shoe};
+   else runs.push({distance, seconds, shoe});
+   save(); updateUI();
+   document.getElementById("distance").value=""; document.getElementById("time").value="";
+}
+function deleteRun(index) {
+   runs.splice(index,1); save(); updateUI();
+}
+function editRun(index){
+   const run=runs[index];
+   document.getElementById("distance").value=run.distance;
+   document.getElementById("time").value=`${Math.floor(run.seconds/60)}:${(run.seconds%60).toString().padStart(2,'0')}`;
+   document.getElementById("shoeSelect").value=run.shoe;
+   // Nadpisz po edycji
+   addRun.editIndex=index;
+}
+function resetRuns() { if(!confirm("Na pewno usunąć wszystkie biegi?")) return; runs=[]; save(); updateUI(); }
+function updateUI() {
+   const select=document.getElementById("shoeSelect"); select.innerHTML="";
+   shoes.forEach(s=>{ const opt=document.createElement("option"); opt.textContent=s; select.appendChild(opt); });
+   if(!select.value) select.value="Nike Vomero Plus";
+   const stats=document.getElementById("stats"); stats.innerHTML="";
+   shoes.forEach(shoe=>{
+       const shoeRuns=runs.filter(r=>r.shoe===shoe);
+       if(!shoeRuns.length) return;
+       const totalDist=shoeRuns.reduce((a,r)=>a+r.distance,0);
+       const totalTime=shoeRuns.reduce((a,r)=>a+r.seconds,0);
+       const avgPace=totalTime/totalDist;
+       const div=document.createElement("div"); div.className="shoe-stat";
+       div.innerHTML=`<div class="shoe-name">${shoe}</div>
+           Dystans: ${totalDist.toFixed(1)} km<br>
+           Czas wybiegany: ${formatTime(totalTime)}<br>
+           Średnie tempo: ${formatPace(avgPace)}`;
+       stats.appendChild(div);
+   });
+   // Lista biegów
+   const runList=document.getElementById("runList"); runList.innerHTML="";
+   runs.forEach((r,i)=>{
+       const div=document.createElement("div"); div.className="run-item";
+       div.innerHTML=`
+<div class="run-info">
+               ${r.distance} km, ${Math.floor(r.seconds/60)}:${(r.seconds%60).toString().padStart(2,'0')} min, ${r.shoe}
+</div>
+<div class="run-buttons">
+<button onclick="editRun(${i}); addRun.editIndex=${i}">Edytuj</button>
+<button onclick="deleteRun(${i})">Usuń</button>
+</div>
+       `;
+       runList.appendChild(div);
+   });
+}
+updateUI();
 </script>
 </body>
 </html>
