@@ -161,7 +161,7 @@
    }
    function formatPace(secPerKm) {
        const min = Math.floor(secPerKm / 60);
-       const sec = Math.round(secPerKm % 60);
+       const sec = Math.round(secPerKm - min * 60);
        return `${min}:${sec.toString().padStart(2,'0')} min/km`;
    }
    function addRun() {
@@ -197,7 +197,7 @@
            if (!shoeRuns.length) return;
            const totalDist = shoeRuns.reduce((a, r) => a + r.distance, 0);
            const totalTime = shoeRuns.reduce((a, r) => a + r.seconds, 0);
-           const avgPace = totalTime / totalDist;
+           const avgPace = totalTime / totalDist; // sekundy/km
            const div = document.createElement("div");
            div.className = "shoe-stat";
            div.innerHTML = `
