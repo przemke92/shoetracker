@@ -6,229 +6,262 @@
 
 <style>
 body {
-margin: 0;
-font-family: Arial, sans-serif;
-background: #0b0b0b;
-color: #eaeaea;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    background: #0b0b0b;
+    color: #eaeaea;
 }
 
 .app {
-max-width: 420px;
-margin: auto;
-padding: 20px;
+    max-width: 480px;
+    margin: auto;
+    padding: 20px;
 }
 
 h1 {
-text-align: center;
-color: #39ff14;
+    text-align: center;
+    color: #39ff14;
+    font-size: 28px;
+    margin-bottom: 20px;
 }
 
 .card {
-background: #141414;
-border-radius: 12px;
-padding: 15px;
-margin-bottom: 15px;
+    background: #141414;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 18px;
 }
 
 label {
-display: block;
-margin-top: 10px;
-font-size: 14px;
-color: #aaa;
+    display: block;
+    margin-top: 14px;
+    font-size: 16px;
+    color: #aaa;
 }
 
 input, select, button {
-width: 100%;
-margin-top: 5px;
-padding: 10px;
-border-radius: 8px;
-border: none;
-font-size: 15px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 18px;
 }
 
 input, select {
-background: #1f1f1f;
-color: white;
+    background: #1f1f1f;
+    color: white;
 }
 
 button {
-margin-top: 15px;
-background: #39ff14;
-color: black;
-font-weight: bold;
-cursor: pointer;
+    margin-top: 20px;
+    background: #39ff14;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button.secondary {
+    background: #222;
+    color: #39ff14;
 }
 
 .shoe {
-border-bottom: 1px solid #222;
-padding: 10px 0;
+    border-bottom: 1px solid #222;
+    padding: 14px 0;
+}
+
+.shoe:last-child {
+    border-bottom: none;
 }
 
 .shoe-name {
-color: #39ff14;
-font-weight: bold;
+    color: #39ff14;
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 6px;
 }
 
 .small {
-font-size: 13px;
-color: #aaa;
+    font-size: 15px;
+    color: #bbb;
+    margin-top: 4px;
+}
+
+/* toggle */
+.hidden {
+    display: none;
 }
 </style>
 </head>
 
 <body>
 <div class="app">
-<h1>SHOE TRACKER</h1>
+    <h1>SHOE TRACKER</h1>
 
-<div class="card">
-<label>Dystans (km)</label>
-<input type="number" step="0.01" id="distance">
+    <div class="card">
+        <label>Dystans (km)</label>
+        <input type="number" step="0.01" id="distance">
 
-<label>Czas (mm:ss)</label>
-<input type="text" placeholder="np. 45:30" id="time">
+        <label>Czas (mm:ss)</label>
+        <input type="text" placeholder="np. 45:30" id="time">
 
-<label>Buty</label>
-<select id="shoe"></select>
+        <label>Buty</label>
+        <select id="shoe"></select>
 
-<button onclick="addRun()">Dodaj bieg</button>
-</div>
+        <button onclick="addRun()">Dodaj bieg</button>
+    </div>
 
-<div class="card">
-<label>Dodaj nowe buty</label>
-<input type="text" id="newShoe">
-<button onclick="addShoe()">Dodaj buty</button>
-</div>
+    <button class="secondary" onclick="toggleShoes()">
+        Zarządzaj butami
+    </button>
 
-<div class="card">
-<h3>Statystyki butów</h3>
-<div id="shoeStats"></div>
-</div>
+    <div class="card hidden" id="shoeManager">
+        <label>Nazwa nowego modelu</label>
+        <input type="text" id="newShoe">
+        <button onclick="addShoe()">Dodaj buty</button>
+    </div>
+
+    <div class="card">
+        <h3>Statystyki butów</h3>
+        <div id="shoeStats"></div>
+    </div>
+
+    <div class="card">
+        <button class="secondary" onclick="resetData()">
+            Wyczyść wszystkie biegi
+        </button>
+    </div>
 </div>
 
 <script>
 let runs = JSON.parse(localStorage.getItem("runs")) || [];
 let shoes = JSON.parse(localStorage.getItem("shoes")) || [
-"Nike AlphaFly 3",
-"Nike Zoom Fly 5"
+    "Nike AlphaFly 3",
+    "Nike Zoom Fly 5"
 ];
 
 function save() {
-localStorage.setItem("runs", JSON.stringify(runs));
-localStorage.setItem("shoes", JSON.stringify(shoes));
+    localStorage.setItem("runs", JSON.stringify(runs));
+    localStorage.setItem("shoes", JSON.stringify(shoes));
 }
 
 function renderShoes() {
-const select = document.getElementById("shoe");
-select.innerHTML = "";
-shoes.forEach(s => {
-const opt = document.createElement("option");
-opt.textContent = s;
-select.appendChild(opt);
-});
+    const select = document.getElementById("shoe");
+    select.innerHTML = "";
+    shoes.forEach(s => {
+        const opt = document.createElement("option");
+        opt.textContent = s;
+        select.appendChild(opt);
+    });
+}
+
+function toggleShoes() {
+    document.getElementById("shoeManager").classList.toggle("hidden");
 }
 
 function addShoe() {
-const name = document.getElementById("newShoe").value.trim();
-if (!name || shoes.includes(name)) return;
+    const name = document.getElementById("newShoe").value.trim();
+    if (!name || shoes.includes(name)) return;
 
-shoes.push(name);
-save();
-renderShoes();
-document.getElementById("newShoe").value = "";
+    shoes.push(name);
+    save();
+    renderShoes();
+    document.getElementById("newShoe").value = "";
 }
 
 function addRun() {
-const distance = parseFloat(document.getElementById("distance").value);
-const time = document.getElementById("time").value.trim();
-const shoe = document.getElementById("shoe").value;
+    const distance = parseFloat(document.getElementById("distance").value);
+    const time = document.getElementById("time").value.trim();
+    const shoe = document.getElementById("shoe").value;
 
-if (!distance || distance <= 0) return;
+    if (!distance || distance <= 0) return;
 
-const parts = time.split(":");
-if (parts.length !== 2) return;
+    const parts = time.split(":");
+    if (parts.length !== 2) return;
 
-const minutes = parseInt(parts[0], 10);
-const seconds = parseInt(parts[1], 10);
+    const minutes = parseInt(parts[0], 10);
+    const seconds = parseInt(parts[1], 10);
 
-if (
-isNaN(minutes) ||
-isNaN(seconds) ||
-minutes < 0 ||
-seconds < 0 ||
-seconds >= 60
-) return;
+    if (
+        isNaN(minutes) ||
+        isNaN(seconds) ||
+        minutes < 0 ||
+        seconds < 0 ||
+        seconds >= 60
+    ) return;
 
-const totalSeconds = minutes * 60 + seconds;
+    const totalSeconds = minutes * 60 + seconds;
 
-runs.push({
-distance: distance,
-seconds: totalSeconds,
-shoe: shoe
-});
+    runs.push({ distance, seconds: totalSeconds, shoe });
+    save();
+    updateStats();
 
-save();
-updateStats();
+    document.getElementById("distance").value = "";
+    document.getElementById("time").value = "";
+}
 
-document.getElementById("distance").value = "";
-document.getElementById("time").value = "";
+function resetData() {
+    if (!confirm("Usunąć wszystkie biegi?")) return;
+    runs = [];
+    localStorage.removeItem("runs");
+    updateStats();
 }
 
 function formatTime(seconds) {
-if (isNaN(seconds) || seconds <= 0) return "0m 0d 0h 0m 0s";
+    if (!seconds || seconds <= 0) return "0m 0d 0h 0m 0s";
 
-const month = Math.floor(seconds / (30 * 24 * 3600));
-seconds %= 30 * 24 * 3600;
-const day = Math.floor(seconds / (24 * 3600));
-seconds %= 24 * 3600;
-const hour = Math.floor(seconds / 3600);
-seconds %= 3600;
-const min = Math.floor(seconds / 60);
-const sec = Math.floor(seconds % 60);
+    const month = Math.floor(seconds / (30 * 24 * 3600));
+    seconds %= 30 * 24 * 3600;
+    const day = Math.floor(seconds / (24 * 3600));
+    seconds %= 24 * 3600;
+    const hour = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
 
-return `${month}m ${day}d ${hour}h ${min}m ${sec}s`;
+    return `${month}m ${day}d ${hour}h ${min}m ${sec}s`;
 }
 
 function paceFromSeconds(secondsPerKm) {
-if (isNaN(secondsPerKm) || secondsPerKm <= 0) return "0:00 min/km";
+    if (!secondsPerKm || secondsPerKm <= 0) return "0:00 min/km";
 
-const min = Math.floor(secondsPerKm / 60);
-const sec = Math.round(secondsPerKm % 60)
-.toString()
-.padStart(2, "0");
+    const min = Math.floor(secondsPerKm / 60);
+    const sec = Math.round(secondsPerKm % 60)
+        .toString()
+        .padStart(2, "0");
 
-return `${min}:${sec} min/km`;
+    return `${min}:${sec} min/km`;
 }
 
 function updateStats() {
-const stats = {};
+    const stats = {};
 
-runs.forEach(r => {
-if (!stats[r.shoe]) {
-stats[r.shoe] = { distance: 0, seconds: 0 };
-}
-stats[r.shoe].distance += r.distance;
-stats[r.shoe].seconds += r.seconds;
-});
+    runs.forEach(r => {
+        if (!stats[r.shoe]) {
+            stats[r.shoe] = { distance: 0, seconds: 0 };
+        }
+        stats[r.shoe].distance += r.distance;
+        stats[r.shoe].seconds += r.seconds;
+    });
 
-const container = document.getElementById("shoeStats");
-container.innerHTML = "";
+    const container = document.getElementById("shoeStats");
+    container.innerHTML = "";
 
-for (const shoe in stats) {
-const avgPace =
-stats[shoe].distance > 0
-? stats[shoe].seconds / stats[shoe].distance
-: 0;
+    for (const shoe in stats) {
+        const avgPace =
+            stats[shoe].seconds / stats[shoe].distance;
 
-const div = document.createElement("div");
-div.className = "shoe";
-div.innerHTML = `
-<div class="shoe-name">${shoe}</div>
-<div class="small">Dystans: ${stats[shoe].distance.toFixed(1)} km</div>
-<div class="small">Czas wybiegany: ${formatTime(stats[shoe].seconds)}</div>
-<div class="small">Średnie tempo: ${paceFromSeconds(avgPace)}</div>
-`;
-container.appendChild(div);
-}
+        const div = document.createElement("div");
+        div.className = "shoe";
+        div.innerHTML = `
+            <div class="shoe-name">${shoe}</div>
+            <div class="small">Dystans: ${stats[shoe].distance.toFixed(1)} km</div>
+            <div class="small">Czas wybiegany: ${formatTime(stats[shoe].seconds)}</div>
+            <div class="small">Średnie tempo: ${paceFromSeconds(avgPace)}</div>
+        `;
+        container.appendChild(div);
+    }
 }
 
 renderShoes();
