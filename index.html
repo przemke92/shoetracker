@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Run & Shoe Tracker</title>
+<title>Shoe Tracker</title>
 
 <style>
 body {
@@ -22,6 +22,10 @@ h1 {
 text-align: center;
 color: #39ff14;
 letter-spacing: 1px;
+}
+
+h3 {
+margin-top: 0;
 }
 
 .card {
@@ -85,9 +89,11 @@ margin-top: 5px;
 
 <body>
 <div class="app">
-<h1>RUN TRACKER</h1>
+<h1>SHOE TRACKER</h1>
 
 <div class="card">
+<h3>Dodaj bieg</h3>
+
 <label>Dystans (km)</label>
 <input type="number" step="0.01" id="distance">
 
@@ -95,14 +101,19 @@ margin-top: 5px;
 <input type="text" placeholder="np. 45:30" id="time">
 
 <label>Buty</label>
-<select id="shoe">
-<option>Nike AlphaFly 3</option>
-<option>Nike Zoom Fly 5</option>
-<option>Inne</option>
-</select>
+<select id="shoe"></select>
 
 <button onclick="addRun()">Dodaj bieg</button>
 <div class="small" id="paceInfo"></div>
+</div>
+
+<div class="card">
+<h3>Dodaj nowe buty</h3>
+
+<label>Nazwa modelu</label>
+<input type="text" id="newShoe">
+
+<button onclick="addShoe()">Dodaj buty</button>
 </div>
 
 <div class="card">
@@ -113,6 +124,34 @@ margin-top: 5px;
 
 <script>
 let runs = JSON.parse(localStorage.getItem("runs")) || [];
+let shoes = JSON.parse(localStorage.getItem("shoes")) || [
+"Nike AlphaFly 3",
+"Nike Zoom Fly 5"
+];
+
+function saveShoes() {
+localStorage.setItem("shoes", JSON.stringify(shoes));
+}
+
+function renderShoes() {
+const select = document.getElementById("shoe");
+select.innerHTML = "";
+shoes.forEach(s => {
+const opt = document.createElement("option");
+opt.textContent = s;
+select.appendChild(opt);
+});
+}
+
+function addShoe() {
+const name = document.getElementById("newShoe").value.trim();
+if (!name || shoes.includes(name)) return;
+
+shoes.push(name);
+saveShoes();
+renderShoes();
+document.getElementById("newShoe").value = "";
+}
 
 function addRun() {
 const distance = parseFloat(document.getElementById("distance").value);
@@ -129,7 +168,8 @@ runs.push({ distance, shoe });
 localStorage.setItem("runs", JSON.stringify(runs));
 
 document.getElementById("paceInfo").innerText =
-`Tempo: ${Math.floor(pace)}:${Math.round((pace % 1) * 60).toString().padStart(2, "0")} min/km`;
+`Tempo: ${Math.floor(pace)}:${Math.round((pace % 1) * 60)
+.toString().padStart(2, "0")} min/km`;
 
 updateStats();
 }
@@ -151,7 +191,8 @@ container.appendChild(div);
 }
 }
 
+renderShoes();
 updateStats();
 </script>
 </body>
-</html>`
+</html>
