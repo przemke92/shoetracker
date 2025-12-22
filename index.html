@@ -159,6 +159,11 @@
        days %= 30;
        return `${months}m ${days}d ${hrs}h ${min}m ${s}s`;
    }
+   function formatPace(secPerKm) {
+       const min = Math.floor(secPerKm / 60);
+       const sec = Math.round(secPerKm % 60);
+       return `${min}:${sec.toString().padStart(2,'0')} min/km`;
+   }
    function addRun() {
        const distance = parseFloat(document.getElementById("distance").value);
        const timeStr = document.getElementById("time").value;
@@ -199,7 +204,7 @@
 <div class="shoe-name">${shoe}</div>
                Dystans: ${totalDist.toFixed(1)} km<br>
                Czas wybiegany: ${formatTime(totalTime)}<br>
-               Średnie tempo: ${(avgPace/60).toFixed(2)} min/km
+               Średnie tempo: ${formatPace(avgPace)}
            `;
            stats.appendChild(div);
        });
