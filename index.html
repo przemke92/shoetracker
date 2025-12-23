@@ -139,7 +139,7 @@ font-size: 13px;
 <option value="slowest">Najwolniejsze tempo</option>
 </select>
 
-<div id="runs"></div>
+<div id="runsEl"></div>
 
 <button class="secondary" id="toggleRunsBtn" onclick="toggleRuns()">Pokaż więcej</button>
 </div>
@@ -161,7 +161,9 @@ localStorage.setItem("shoes", JSON.stringify(shoes));
 localStorage.setItem("runs", JSON.stringify(runs));
 }
 
-function setDistance(v) { distance.value = v; }
+function setDistance(v) {
+distance.value = v;
+}
 
 function parseTime(t) {
 const p = t.split(":").map(Number);
@@ -213,9 +215,10 @@ if (sort === "fastest") list.sort((a,b)=>a.pace-b.pace);
 if (sort === "slowest") list.sort((a,b)=>b.pace-a.pace);
 
 const visible = showAllRuns ? list : list.slice(0,3);
-runs.innerHTML = "";
+const el = document.getElementById("runsEl");
+el.innerHTML = "";
 
-visible.forEach((r,i)=>{
+visible.forEach((r, i) => {
 const div = document.createElement("div");
 div.className = "run";
 div.innerHTML = `
@@ -223,8 +226,9 @@ ${r.distance} km • ${formatTime(r.time)} • ${formatPace(r.pace)} min/km<br>
 <span class="small">${r.shoe}</span>
 <div class="actions">
 <button onclick="deleteRun(${i})">Usuń</button>
-</div>`;
-runs.appendChild(div);
+</div>
+`;
+el.appendChild(div);
 });
 
 toggleRunsBtn.textContent = showAllRuns ? "Pokaż mniej" : "Pokaż więcej";
@@ -248,8 +252,9 @@ shoeForm.classList.toggle("hidden");
 }
 
 function addShoe() {
-if (!newShoe.value.trim()) return;
-shoes.push(newShoe.value.trim());
+const name = newShoe.value.trim();
+if (!name) return;
+shoes.push(name);
 newShoe.value = "";
 save();
 updateShoes();
@@ -265,13 +270,16 @@ a.click();
 }
 
 importFile.addEventListener("change",e=>{
-const r = new FileReader();
-r.onload=()=>{
-const d = JSON.parse(r.result);
-shoes=d.shoes; runs=d.runs;
-save(); updateShoes(); renderRuns();
+const reader = new FileReader();
+reader.onload = ()=>{
+const data = JSON.parse(reader.result);
+shoes = data.shoes;
+runs = data.runs;
+save();
+updateShoes();
+renderRuns();
 };
-r.readAsText(e.target.files[0]);
+reader.readAsText(e.target.files[0]);
 });
 
 updateShoes();
