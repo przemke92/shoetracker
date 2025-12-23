@@ -23,7 +23,6 @@ margin-right: auto;
 h1 {
 text-align: center;
 color: #39ff14;
-margin-bottom: 12px;
 }
 
 .card {
@@ -71,7 +70,6 @@ margin-bottom: 8px;
 .tiles button {
 flex: 1;
 padding: 10px;
-font-size: 15px;
 }
 
 .run {
@@ -99,9 +97,7 @@ padding: 6px;
 font-size: 13px;
 }
 
-.hidden {
-display: none;
-}
+.hidden { display: none; }
 </style>
 </head>
 
@@ -127,38 +123,45 @@ display: none;
 </div>
 
 <div class="card">
-<button class="secondary" onclick="toggleShoeForm()">➕ Dodaj nowe buty</button>
-
+<button class="secondary" onclick="toggleShoeForm()">➕ Dodaj buty</button>
 <div id="shoeForm" class="hidden">
 <input id="newShoe" placeholder="Nazwa butów">
-<button onclick="addShoe()">Zapisz buty</button>
+<button onclick="addShoe()">Zapisz</button>
 </div>
 </div>
 
 <div class="card">
 <h3>Biegi</h3>
+
+<select id="sortSelect" onchange="renderRuns()">
+<option value="newest">Najnowsze</option>
+<option value="fastest">Najszybsze tempo</option>
+<option value="slowest">Najwolniejsze tempo</option>
+</select>
+
 <div id="runs"></div>
+
+<button class="secondary" id="toggleRunsBtn" onclick="toggleRuns()">Pokaż więcej</button>
 </div>
 
 <div class="card">
 <h3>Dane</h3>
 <button class="secondary" onclick="exportData()">Eksportuj</button>
 <input type="file" id="importFile" class="hidden" accept=".json">
-<button class="secondary" onclick="document.getElementById('importFile').click()">Importuj</button>
+<button class="secondary" onclick="importFile.click()">Importuj</button>
 </div>
 
 <script>
 let shoes = JSON.parse(localStorage.getItem("shoes")) || ["Nike Vomero Plus", "Nike AlphaFly 3"];
 let runs = JSON.parse(localStorage.getItem("runs")) || [];
+let showAllRuns = false;
 
 function save() {
 localStorage.setItem("shoes", JSON.stringify(shoes));
 localStorage.setItem("runs", JSON.stringify(runs));
 }
 
-function setDistance(v) {
-distance.value = v;
-}
+function setDistance(v) { distance.value = v; }
 
 function parseTime(t) {
 const p = t.split(":").map(Number);
@@ -171,23 +174,21 @@ function formatTime(sec) {
 const h = Math.floor(sec/3600);
 const m = Math.floor((sec%3600)/60);
 const s = sec % 60;
-return h > 0
-? `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`
-: `${m}:${String(s).padStart(2,"0")}`;
+return h ? `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}` : `${m}:${String(s).padStart(2,"0")}`;
 }
 
 function formatPace(secKm) {
-const m = Math.floor(secKm / 60);
-const s = Math.round(secKm % 60);
+const m = Math.floor(secKm/60);
+const s = Math.round(secKm%60);
 return `${m}:${String(s).padStart(2,"0")}`;
 }
 
 function updateShoes() {
 shoeSelect.innerHTML = "";
-shoes.forEach(sh => {
+shoes.forEach(s => {
 const o = document.createElement("option");
-o.textContent = sh;
-if (sh === "Nike Vomero Plus") o.selected = true;
+o.textContent = s;
+if (s === "Nike Vomero Plus") o.selected = true;
 shoeSelect.appendChild(o);
 });
 }
@@ -197,13 +198,7 @@ const d = parseFloat(distance.value);
 const t = parseTime(time.value);
 if (!d || !t) return alert("Nieprawidłowe dane");
 
-runs.unshift({
-distance: d,
-time: t,
-shoe: shoeSelect.value,
-pace: t / d
-});
-
+runs.unshift({ distance:d, time:t, shoe:shoeSelect.value, pace:t/d });
 save();
 renderRuns();
 distance.value = "";
@@ -211,10 +206,16 @@ time.value = "";
 }
 
 function renderRuns() {
-runsEl = document.getElementById("runs");
-runsEl.innerHTML = "";
+const list = [...runs];
+const sort = sortSelect.value;
 
-runs.forEach((r, i) => {
+if (sort === "fastest") list.sort((a,b)=>a.pace-b.pace);
+if (sort === "slowest") list.sort((a,b)=>b.pace-a.pace);
+
+const visible = showAllRuns ? list : list.slice(0,3);
+runs.innerHTML = "";
+
+visible.forEach((r,i)=>{
 const div = document.createElement("div");
 div.className = "run";
 div.innerHTML = `
@@ -222,15 +223,22 @@ ${r.distance} km • ${formatTime(r.time)} • ${formatPace(r.pace)} min/km<br>
 <span class="small">${r.shoe}</span>
 <div class="actions">
 <button onclick="deleteRun(${i})">Usuń</button>
-</div>
-`;
-runsEl.appendChild(div);
+</div>`;
+runs.appendChild(div);
 });
+
+toggleRunsBtn.textContent = showAllRuns ? "Pokaż mniej" : "Pokaż więcej";
+toggleRunsBtn.style.display = runs.length > 3 ? "block" : "none";
+}
+
+function toggleRuns() {
+showAllRuns = !showAllRuns;
+renderRuns();
 }
 
 function deleteRun(i) {
-if (!confirm("Usunąć ten bieg?")) return;
-runs.splice(i, 1);
+if (!confirm("Usunąć bieg?")) return;
+runs.splice(i,1);
 save();
 renderRuns();
 }
@@ -240,9 +248,8 @@ shoeForm.classList.toggle("hidden");
 }
 
 function addShoe() {
-const name = newShoe.value.trim();
-if (!name) return;
-shoes.push(name);
+if (!newShoe.value.trim()) return;
+shoes.push(newShoe.value.trim());
 newShoe.value = "";
 save();
 updateShoes();
@@ -250,30 +257,21 @@ shoeForm.classList.add("hidden");
 }
 
 function exportData() {
-const data = { shoes, runs };
-const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+const blob = new Blob([JSON.stringify({shoes,runs},null,2)],{type:"application/json"});
 const a = document.createElement("a");
 a.href = URL.createObjectURL(blob);
 a.download = "shoe-tracker-backup.json";
 a.click();
 }
 
-importFile.addEventListener("change", e => {
-const file = e.target.files[0];
-if (!file) return;
-
-const reader = new FileReader();
-reader.onload = () => {
-const data = JSON.parse(reader.result);
-if (!data.shoes || !data.runs) return alert("Zły plik");
-
-shoes = data.shoes;
-runs = data.runs;
-save();
-updateShoes();
-renderRuns();
+importFile.addEventListener("change",e=>{
+const r = new FileReader();
+r.onload=()=>{
+const d = JSON.parse(r.result);
+shoes=d.shoes; runs=d.runs;
+save(); updateShoes(); renderRuns();
 };
-reader.readAsText(file);
+r.readAsText(e.target.files[0]);
 });
 
 updateShoes();
