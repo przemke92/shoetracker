@@ -115,7 +115,14 @@ font-size: 13px;
 </div>
 
 <input id="distance" type="number" step="0.01" placeholder="Dystans (km)">
-<input id="time" placeholder="Czas (hh:mm:ss lub mm:ss)">
+
+<input id="time"
+placeholder="Czas (mm:ss lub hh:mm:ss)"
+inputmode="numeric"
+pattern="[0-9:]*"
+oninput="autoColon(this)"
+>
+
 <select id="shoeSelect"></select>
 
 <button onclick="addRun()">Dodaj bieg</button>
@@ -159,39 +166,47 @@ let shoes = JSON.parse(localStorage.getItem("shoes")) || ["Nike Vomero Plus", "N
 let runs = JSON.parse(localStorage.getItem("runs")) || [];
 let showAllRuns = false;
 
-function save() {
+function save(){
 localStorage.setItem("shoes", JSON.stringify(shoes));
 localStorage.setItem("runs", JSON.stringify(runs));
 }
 
 function setDistance(v){ distance.value = v; }
 
+/* AUTO DWUKROPEK */
+function autoColon(el){
+let v = el.value.replace(/[^0-9:]/g,"");
+if(v.length===2 && !v.includes(":")) v += ":";
+el.value = v;
+}
+
 function parseTime(t){
-const p = t.split(":").map(Number);
-if (p.length===2) return p[0]*60+p[1];
-if (p.length===3) return p[0]*3600+p[1]*60+p[2];
+const p=t.split(":").map(Number);
+if(p.length===2) return p[0]*60+p[1];
+if(p.length===3) return p[0]*3600+p[1]*60+p[2];
 return 0;
 }
 
-/* CZAS POJEDYNCZEGO BIEGU */
 function formatRunTime(sec){
-const h = Math.floor(sec/3600);
-const m = Math.floor((sec%3600)/60);
-const s = sec % 60;
+const h=Math.floor(sec/3600);
+const m=Math.floor((sec%3600)/60);
+const s=sec%60;
 if(h>0) return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
 return `${m}:${String(s).padStart(2,"0")}`;
 }
 
-/* CZAS SUMARYCZNY (BUTY) */
+/* 🔥 STATYSTYKA BUTÓW Z SEKUNDAMI */
 function formatTotalTime(sec){
-const d = Math.floor(sec/86400);
-sec %= 86400;
-const h = Math.floor(sec/3600);
-const m = Math.floor((sec%3600)/60);
+const d=Math.floor(sec/86400);
+sec%=86400;
+const h=Math.floor(sec/3600);
+sec%=3600;
+const m=Math.floor(sec/60);
+const s=sec%60;
 
-if(d>0) return `${d} d ${h} h ${m} min`;
-if(h>0) return `${h} h ${m} min`;
-return `${m} min`;
+if(d>0) return `${d} d ${h} h ${m} min ${s} s`;
+if(h>0) return `${h} h ${m} min ${s} s`;
+return `${m} min ${s} s`;
 }
 
 function formatPace(secKm){
@@ -221,10 +236,9 @@ distance.value=""; time.value="";
 }
 
 function renderRuns(){
-const list=[...runs];
-const sort=sortSelect.value;
-if(sort==="fastest") list.sort((a,b)=>a.pace-b.pace);
-if(sort==="slowest") list.sort((a,b)=>b.pace-a.pace);
+let list=[...runs];
+if(sortSelect.value==="fastest") list.sort((a,b)=>a.pace-b.pace);
+if(sortSelect.value==="slowest") list.sort((a,b)=>b.pace-a.pace);
 
 const visible=showAllRuns?list:list.slice(0,3);
 runsEl.innerHTML="";
@@ -248,46 +262,29 @@ toggleRunsBtn.style.display=runs.length>3?"block":"none";
 function renderShoeStats(){
 shoeStats.innerHTML="";
 shoes.forEach(sh=>{
-const shoeRuns=runs.filter(r=>r.shoe===sh);
-if(!shoeRuns.length) return;
+const r=runs.filter(x=>x.shoe===sh);
+if(!r.length) return;
 
-const km=shoeRuns.reduce((a,b)=>a+b.distance,0);
-const time=shoeRuns.reduce((a,b)=>a+b.time,0);
-const avgPace=time/km;
+const km=r.reduce((a,b)=>a+b.distance,0);
+const t=r.reduce((a,b)=>a+b.time,0);
+const pace=t/km;
 
 const div=document.createElement("div");
 div.className="shoeStat";
 div.innerHTML=`
 <strong>${sh}</strong><br>
 ${km.toFixed(1)} km<br>
-${formatTotalTime(time)}<br>
-Średnie tempo: ${formatPace(avgPace)} min/km
+${formatTotalTime(t)}<br>
+Średnie tempo: ${formatPace(pace)} min/km
 `;
 shoeStats.appendChild(div);
 });
 }
 
 function toggleRuns(){ showAllRuns=!showAllRuns; renderRuns(); }
-
-function deleteRun(i){
-if(!confirm("Usunąć bieg?")) return;
-runs.splice(i,1);
-save();
-renderRuns();
-renderShoeStats();
-}
-
+function deleteRun(i){ if(confirm("Usunąć bieg?")){ runs.splice(i,1); save(); renderRuns(); renderShoeStats(); } }
 function toggleShoeForm(){ shoeForm.classList.toggle("hidden"); }
-
-function addShoe(){
-if(!newShoe.value.trim()) return;
-shoes.push(newShoe.value.trim());
-newShoe.value="";
-save();
-updateShoes();
-renderShoeStats();
-shoeForm.classList.add("hidden");
-}
+function addShoe(){ if(newShoe.value){ shoes.push(newShoe.value); newShoe.value=""; save(); updateShoes(); renderShoeStats(); shoeForm.classList.add("hidden"); } }
 
 function exportData(){
 const blob=new Blob([JSON.stringify({shoes,runs},null,2)],{type:"application/json"});
@@ -297,15 +294,11 @@ a.download="shoe-tracker-backup.json";
 a.click();
 }
 
-importFile.addEventListener("change",e=>{
+importFile.onchange=e=>{
 const r=new FileReader();
-r.onload=()=>{
-const d=JSON.parse(r.result);
-shoes=d.shoes; runs=d.runs;
-save(); updateShoes(); renderRuns(); renderShoeStats();
-};
+r.onload=()=>{ const d=JSON.parse(r.result); shoes=d.shoes; runs=d.runs; save(); updateShoes(); renderRuns(); renderShoeStats(); };
 r.readAsText(e.target.files[0]);
-});
+};
 
 updateShoes();
 renderRuns();
