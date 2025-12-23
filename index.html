@@ -173,14 +173,25 @@ if (p.length===3) return p[0]*3600+p[1]*60+p[2];
 return 0;
 }
 
-function formatTime(sec){
+/* CZAS POJEDYNCZEGO BIEGU */
+function formatRunTime(sec){
+const h = Math.floor(sec/3600);
+const m = Math.floor((sec%3600)/60);
+const s = sec % 60;
+if(h>0) return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+return `${m}:${String(s).padStart(2,"0")}`;
+}
+
+/* CZAS SUMARYCZNY (BUTY) */
+function formatTotalTime(sec){
 const d = Math.floor(sec/86400);
-sec%=86400;
-const h=Math.floor(sec/3600);
-const m=Math.floor((sec%3600)/60);
-if(d>0) return `${d}d ${h}h ${m}m`;
-if(h>0) return `${h}h ${m}m`;
-return `${m}m`;
+sec %= 86400;
+const h = Math.floor(sec/3600);
+const m = Math.floor((sec%3600)/60);
+
+if(d>0) return `${d} d ${h} h ${m} min`;
+if(h>0) return `${h} h ${m} min`;
+return `${m} min`;
 }
 
 function formatPace(secKm){
@@ -194,7 +205,6 @@ shoeSelect.innerHTML="";
 shoes.forEach(s=>{
 const o=document.createElement("option");
 o.textContent=s;
-if(s==="Nike Vomero Plus") o.selected=true;
 shoeSelect.appendChild(o);
 });
 }
@@ -224,7 +234,7 @@ const div=document.createElement("div");
 div.className="run";
 div.innerHTML=`
 ${r.distance} km • ${formatPace(r.pace)} min/km<br>
-<span class="small">${formatTime(r.time)} • ${r.shoe}</span>
+<span class="small">${formatRunTime(r.time)} • ${r.shoe}</span>
 <div class="actions">
 <button onclick="deleteRun(${i})">Usuń</button>
 </div>`;
@@ -250,7 +260,7 @@ div.className="shoeStat";
 div.innerHTML=`
 <strong>${sh}</strong><br>
 ${km.toFixed(1)} km<br>
-${formatTime(time)}<br>
+${formatTotalTime(time)}<br>
 Średnie tempo: ${formatPace(avgPace)} min/km
 `;
 shoeStats.appendChild(div);
