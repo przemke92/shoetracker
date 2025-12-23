@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-
 <title>Shoe Tracker</title>
 
 <style>
@@ -72,7 +71,7 @@ flex: 1;
 padding: 10px;
 }
 
-.run {
+.run, .shoeStat {
 background: #1a1a1a;
 border-radius: 10px;
 padding: 10px;
@@ -140,8 +139,12 @@ font-size: 13px;
 </select>
 
 <div id="runsEl"></div>
-
 <button class="secondary" id="toggleRunsBtn" onclick="toggleRuns()">Pokaż więcej</button>
+</div>
+
+<div class="card">
+<h3>Statystyki butów</h3>
+<div id="shoeStats"></div>
 </div>
 
 <div class="card">
@@ -161,129 +164,142 @@ localStorage.setItem("shoes", JSON.stringify(shoes));
 localStorage.setItem("runs", JSON.stringify(runs));
 }
 
-function setDistance(v) {
-distance.value = v;
-}
+function setDistance(v){ distance.value = v; }
 
-function parseTime(t) {
+function parseTime(t){
 const p = t.split(":").map(Number);
-if (p.length === 2) return p[0]*60 + p[1];
-if (p.length === 3) return p[0]*3600 + p[1]*60 + p[2];
+if (p.length===2) return p[0]*60+p[1];
+if (p.length===3) return p[0]*3600+p[1]*60+p[2];
 return 0;
 }
 
-function formatTime(sec) {
-const h = Math.floor(sec/3600);
-const m = Math.floor((sec%3600)/60);
-const s = sec % 60;
-return h ? `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}` : `${m}:${String(s).padStart(2,"0")}`;
+function formatTime(sec){
+const d = Math.floor(sec/86400);
+sec%=86400;
+const h=Math.floor(sec/3600);
+const m=Math.floor((sec%3600)/60);
+if(d>0) return `${d}d ${h}h ${m}m`;
+if(h>0) return `${h}h ${m}m`;
+return `${m}m`;
 }
 
-function formatPace(secKm) {
-const m = Math.floor(secKm/60);
-const s = Math.round(secKm%60);
+function formatPace(secKm){
+const m=Math.floor(secKm/60);
+const s=Math.round(secKm%60);
 return `${m}:${String(s).padStart(2,"0")}`;
 }
 
-function updateShoes() {
-shoeSelect.innerHTML = "";
-shoes.forEach(s => {
-const o = document.createElement("option");
-o.textContent = s;
-if (s === "Nike Vomero Plus") o.selected = true;
+function updateShoes(){
+shoeSelect.innerHTML="";
+shoes.forEach(s=>{
+const o=document.createElement("option");
+o.textContent=s;
+if(s==="Nike Vomero Plus") o.selected=true;
 shoeSelect.appendChild(o);
 });
 }
 
-function addRun() {
-const d = parseFloat(distance.value);
-const t = parseTime(time.value);
-if (!d || !t) return alert("Nieprawidłowe dane");
-
-runs.unshift({ distance:d, time:t, shoe:shoeSelect.value, pace:t/d });
+function addRun(){
+const d=parseFloat(distance.value);
+const t=parseTime(time.value);
+if(!d||!t) return alert("Nieprawidłowe dane");
+runs.unshift({distance:d,time:t,shoe:shoeSelect.value,pace:t/d});
 save();
 renderRuns();
-distance.value = "";
-time.value = "";
+renderShoeStats();
+distance.value=""; time.value="";
 }
 
-function renderRuns() {
-const list = [...runs];
-const sort = sortSelect.value;
+function renderRuns(){
+const list=[...runs];
+const sort=sortSelect.value;
+if(sort==="fastest") list.sort((a,b)=>a.pace-b.pace);
+if(sort==="slowest") list.sort((a,b)=>b.pace-a.pace);
 
-if (sort === "fastest") list.sort((a,b)=>a.pace-b.pace);
-if (sort === "slowest") list.sort((a,b)=>b.pace-a.pace);
+const visible=showAllRuns?list:list.slice(0,3);
+runsEl.innerHTML="";
 
-const visible = showAllRuns ? list : list.slice(0,3);
-const el = document.getElementById("runsEl");
-el.innerHTML = "";
-
-visible.forEach((r, i) => {
-const div = document.createElement("div");
-div.className = "run";
-div.innerHTML = `
-${r.distance} km • ${formatTime(r.time)} • ${formatPace(r.pace)} min/km<br>
-<span class="small">${r.shoe}</span>
+visible.forEach((r,i)=>{
+const div=document.createElement("div");
+div.className="run";
+div.innerHTML=`
+${r.distance} km • ${formatPace(r.pace)} min/km<br>
+<span class="small">${formatTime(r.time)} • ${r.shoe}</span>
 <div class="actions">
 <button onclick="deleteRun(${i})">Usuń</button>
-</div>
-`;
-el.appendChild(div);
+</div>`;
+runsEl.appendChild(div);
 });
 
-toggleRunsBtn.textContent = showAllRuns ? "Pokaż mniej" : "Pokaż więcej";
-toggleRunsBtn.style.display = runs.length > 3 ? "block" : "none";
+toggleRunsBtn.textContent=showAllRuns?"Pokaż mniej":"Pokaż więcej";
+toggleRunsBtn.style.display=runs.length>3?"block":"none";
 }
 
-function toggleRuns() {
-showAllRuns = !showAllRuns;
-renderRuns();
+function renderShoeStats(){
+shoeStats.innerHTML="";
+shoes.forEach(sh=>{
+const shoeRuns=runs.filter(r=>r.shoe===sh);
+if(!shoeRuns.length) return;
+
+const km=shoeRuns.reduce((a,b)=>a+b.distance,0);
+const time=shoeRuns.reduce((a,b)=>a+b.time,0);
+const avgPace=time/km;
+
+const div=document.createElement("div");
+div.className="shoeStat";
+div.innerHTML=`
+<strong>${sh}</strong><br>
+${km.toFixed(1)} km<br>
+${formatTime(time)}<br>
+Średnie tempo: ${formatPace(avgPace)} min/km
+`;
+shoeStats.appendChild(div);
+});
 }
 
-function deleteRun(i) {
-if (!confirm("Usunąć bieg?")) return;
+function toggleRuns(){ showAllRuns=!showAllRuns; renderRuns(); }
+
+function deleteRun(i){
+if(!confirm("Usunąć bieg?")) return;
 runs.splice(i,1);
 save();
 renderRuns();
+renderShoeStats();
 }
 
-function toggleShoeForm() {
-shoeForm.classList.toggle("hidden");
-}
+function toggleShoeForm(){ shoeForm.classList.toggle("hidden"); }
 
-function addShoe() {
-const name = newShoe.value.trim();
-if (!name) return;
-shoes.push(name);
-newShoe.value = "";
+function addShoe(){
+if(!newShoe.value.trim()) return;
+shoes.push(newShoe.value.trim());
+newShoe.value="";
 save();
 updateShoes();
+renderShoeStats();
 shoeForm.classList.add("hidden");
 }
 
-function exportData() {
-const blob = new Blob([JSON.stringify({shoes,runs},null,2)],{type:"application/json"});
-const a = document.createElement("a");
-a.href = URL.createObjectURL(blob);
-a.download = "shoe-tracker-backup.json";
+function exportData(){
+const blob=new Blob([JSON.stringify({shoes,runs},null,2)],{type:"application/json"});
+const a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="shoe-tracker-backup.json";
 a.click();
 }
 
 importFile.addEventListener("change",e=>{
-const reader = new FileReader();
-reader.onload = ()=>{
-const data = JSON.parse(reader.result);
-shoes = data.shoes;
-runs = data.runs;
-save();
-updateShoes();
-renderRuns();
+const r=new FileReader();
+r.onload=()=>{
+const d=JSON.parse(r.result);
+shoes=d.shoes; runs=d.runs;
+save(); updateShoes(); renderRuns(); renderShoeStats();
 };
-reader.readAsText(e.target.files[0]);
+r.readAsText(e.target.files[0]);
 });
 
 updateShoes();
 renderRuns();
+renderShoeStats();
 </script>
 
 </body>
